@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KotoKombat — котокролики & монеты</title>
+  <meta name="description" content="KotoKombat — кликер про котокроликов, апгрейды и бизнесы. Сохранение, оффлайн-доход, уникальный ID, airdrop-заявки." />
+  <style>
+    :root {
+      --bg1: #0f1224;
+      --bg2: #1b1f3a;
+      --card: rgba(255,255,255,0.06);
+      --card-strong: rgba(255,255,255,0.12);
+      --accent: #7c5cff;
+      --accent2: #35d0ff;
+      --good: #5CFF95;
+      --warn: #ffd166;
+      --bad: #ff5c7a;
+      --text: #eaf1ff;
+      --muted: #a9b3d0;
+      --coin: #ffd54a;
+      --energy: #8affff;
+      --shadow: 0 10px 30px rgba(0,0,0,0.35);
+      --radius: 18px;
+      --radius-sm: 12px;
+      --blur: saturate(1.2) blur(6px);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+      color: var(--text);
+      background: radial-gradient(1200px 800px at 20% 10%, #1b2145 0%, #151831 40%, #0b0e1e 100%),
+                  linear-gradient(135deg, var(--bg1), var(--bg2));
+      background-attachment: fixed;
+      overflow-x: hidden;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 330px 1fr 360px;
+      gap: 16px; padding: 16px; max-width: 1400px; margin: 0 auto;
+    }
+
+    header.topbar {
+      grid-column: 1 / -1;
+      display: flex; align-items: center; justify-content: space-between;
+      background: linear-gradient(135deg, rgba(124,92,255,0.25), rgba(53,208,255,0.12));
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: var(--shadow);
+      padding: 12px 16px; border-radius: var(--radius);
+      position: sticky; top: 8px; backdrop-filter: var(--blur); z-index: 10;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; letter-spacing: 0.3px; }
+    .brand .logo { width: 36px; height: 36px; border-radius: 50%; background:
+      radial-gradient(10px 10px at 30% 30%, #fff8, #fff0),
+      radial-gradient(circle at 70% 30%, #fff8 0 8px, #0000 9px),
+      radial-gradient(18px 18px at 50% 70%, #ff66a1aa, #ff66a100),
+      conic-gradient(from 0deg, #7c5cff, #35d0ff, #7c5cff);
+      box-shadow: inset 0 0 12px #0008, 0 6px 16px #0008;
+    }
+
+    .statline { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .pill {
+      background: linear-gradient(135deg, var(--card), transparent);
+      border: 1px solid rgba(255,255,255,0.14);
+      padding: 8px 12px; border-radius: 999px; font-weight: 600; color: var(--text);
+      display: inline-flex; gap: 8px; align-items: center; box-shadow: var(--shadow);
+    }
+    .pill .num { font-variant-numeric: tabular-nums; }
+
+    .col { display: flex; flex-direction: column; gap: 16px; }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 16px; position: relative; overflow: hidden;
+    }
+
+    h2 { margin: 0 0 10px; font-size: 18px; letter-spacing: 0.3px; }
+    .muted { color: var(--muted); font-size: 14px; }
+
+    /* Click area */
+    .click-area {
+      display: grid; place-items: center; min-height: 340px;
+      border-radius: var(--radius);
+      background: radial-gradient(400px 180px at 50% 0%, rgba(124,92,255,0.15), rgba(124,92,255,0)),
+                  radial-gradient(400px 180px at 50% 100%, rgba(53,208,255,0.12), rgba(53,208,255,0)),
+                  linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px dashed rgba(255,255,255,0.14);
+      position: relative; overflow: hidden;
+    }
+    .big-btn {
+      border: none; cursor: pointer; padding: 18px 26px; border-radius: 20px;
+      background: linear-gradient(135deg, #8c6bff, #35d0ff);
+      color: #0b0e1e; font-weight: 900; letter-spacing: 0.5px; font-size: 20px;
+      box-shadow: 0 8px 20px rgba(53,208,255,0.25), 0 2px 0 rgba(0,0,0,0.25) inset;
+      transition: transform 0.08s ease, filter 0.2s ease;
+      user-select: none;
+    }
+    .big-btn:active { transform: translateY(1px) scale(0.995); filter: brightness(0.95); }
+
+    .floating { position: absolute; font-weight: 800; pointer-events: none; opacity: 0; animation: pop 900ms ease forwards; }
+    @keyframes pop { 0% { transform: translateY(0) scale(0.6); opacity: 0; }
+                     15% { opacity: 1; }
+                     100% { transform: translateY(-40px) scale(1); opacity: 0; } }
+
+    /* Progress bars */
+    .bar { height: 12px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden; border: 1px solid rgba(255,255,255,0.14); }
+    .bar > .fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); width: 0%; transition: width 0.25s ease; }
+    .bar.energy > .fill { background: linear-gradient(90deg, #8affff, #35d0ff); }
+
+    /* Lists */
+    .list { display: grid; gap: 10px; }
+    .row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 10px; border-radius: var(--radius-sm);
+           background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.12); }
+    .row .title { font-weight: 700; }
+    .row .subtitle { font-size: 13px; color: var(--muted); }
+    .row .actions { display: flex; gap: 8px; align-items: center; }
+
+    button.buy {
+      border: 1px solid rgba(255,255,255,0.22);
+      background: linear-gradient(135deg, rgba(124,92,255,0.25), rgba(53,208,255,0.2));
+      color: var(--text); border-radius: 12px; padding: 8px 12px; cursor: pointer; font-weight: 700;
+      transition: transform 0.08s ease, filter 0.2s ease; box-shadow: var(--shadow); white-space: nowrap;
+    }
+    button.buy:disabled { filter: grayscale(0.8) opacity(0.6); cursor: not-allowed; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+    .tab { padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.04); cursor: pointer; font-weight: 700; }
+    .tab.active { background: linear-gradient(135deg, rgba(124,92,255,0.35), rgba(53,208,255,0.22)); }
+
+    /* Modal */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: none; align-items: center; justify-content: center; z-index: 50; }
+    .modal { width: min(560px, 92vw); background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04)); border: 1px solid rgba(255,255,255,0.16); border-radius: 16px; box-shadow: var(--shadow); padding: 16px; }
+    .modal h3 { margin-top: 0; }
+    .modal .grid { display: grid; gap: 10px; }
+    .modal label { font-size: 14px; color: var(--muted); }
+    .modal input, .modal textarea { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: var(--text); }
+
+    .footer { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 8px; font-size: 13px; }
+
+    /* Responsive */
+    @media (max-width: 1100px) {
+      .app { grid-template-columns: 1fr; }
+      header.topbar { position: static; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><div class="logo"></div> KotoKombat <span class="muted">v1.0</span></div>
+      <div class="statline">
+        <div class="pill">💰 Монеты: <span id="coins" class="num">0</span></div>
+        <div class="pill">⚡ Энергия: <span id="energyText" class="num">0/0</span></div>
+        <div class="pill">🐾 Котокролики: <span id="petsCount" class="num">0</span></div>
+        <div class="pill">🏪 Бизнесы: <span id="bizCount" class="num">0</span></div>
+        <div class="pill">🆔 ID: <span id="playerId" class="num"></span></div>
+      </div>
+    </header>
+
+    <!-- Left column: Pets & Upgrades -->
+    <section class="col">
+      <div class="card">
+        <h2>🐾 Котокролики</h2>
+        <div class="muted">Заводите милых котокроликов — они усиливают клики и пассивный доход.</div>
+        <div class="tabs" id="petTabs"></div>
+        <div class="list" id="petsList"></div>
+      </div>
+
+      <div class="card">
+        <h2>🛠️ Улучшения</h2>
+        <div class="muted">Прокачивайте силу клика, максимум и реген энергии.</div>
+        <div class="list" id="upgradesList"></div>
+      </div>
+    </section>
+
+    <!-- Middle column: Click area & info -->
+    <section class="col">
+      <div class="card click-area" id="clickArea">
+        <button class="big-btn" id="clickBtn">КЛИК — +<span id="clickGain">1</span> 💰</button>
+        <div style="position:absolute;left:16px;right:16px;bottom:16px;display:grid;gap:8px;">
+          <div class="muted">⚡ Энергия</div>
+          <div class="bar energy"><div id="energyBar" class="fill" style="width:0%"></div></div>
+          <div class="muted">⏱️ Доход/сек: <span id="cps">0</span> • Доход/клик: <span id="cpc">1</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🎯 Достижения</h2>
+        <div class="list" id="achievements"></div>
+      </div>
+    </section>
+
+    <!-- Right column: Businesses, Airdrop, Profile -->
+    <section class="col">
+      <div class="card">
+        <h2>🏪 Бизнесы</h2>
+        <div class="muted">Авто-доход каждую секунду. Стоимость растёт с покупками.</div>
+        <div class="list" id="bizList"></div>
+      </div>
+
+      <div class="card">
+        <h2>🪂 Airdrop</h2>
+        <div class="muted">Отправьте заявку на airdrop монет. (Локальная симуляция без сервера)</div>
+        <div class="list">
+          <button class="buy" id="airdropOpen">Создать заявку</button>
+          <button class="buy" id="exportAirdrops">Экспорт заявок (JSON)</button>
+          <div class="muted" id="airdropCount">Заявок: 0</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>👤 Профиль</h2>
+        <div class="list">
+          <div class="row"><div><div class="title">Уникальный ID</div><div class="subtitle" id="profileId"></div></div><div class="actions"><button class="buy" id="copyId">Скопировать</button></div></div>
+          <div class="row"><div><div class="title">Дата регистрации</div><div class="subtitle" id="joinDate">—</div></div></div>
+          <div class="row"><div><div class="title">Время в игре</div><div class="subtitle" id="playtime">0 мин</div></div></div>
+          <div class="row"><div><div class="title">Оффлайн-доход</div><div class="subtitle" id="offlineInfo">—</div></div></div>
+          <div class="row"><div><div class="title">Сохранение</div><div class="subtitle">Автосейв каждые 15 сек, можно экспорт/импорт.</div></div>
+            <div class="actions"><button class="buy" id="exportSave">Экспорт</button><button class="buy" id="importSave">Импорт</button><button class="buy" id="wipe">Сброс</button></div></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">© 2025 KotoKombat — сделано с любовью к котокроликам 🐱🐇</div>
+  </div>
+
+  <!-- Modal Airdrop -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <h3>Заявка на Airdrop</h3>
+      <div class="grid">
+        <label>Ваш ID</label>
+        <input id="air_id" type="text" readonly />
+        <label>Причина</label>
+        <textarea id="air_reason" rows="3" placeholder="Почему вы хотите airdrop?"></textarea>
+        <label>Желаемое количество монет</label>
+        <input id="air_amount" type="number" min="1" step="1" placeholder="Например, 1000" />
+        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;">
+          <button class="buy" id="air_cancel">Отмена</button>
+          <button class="buy" id="air_submit">Отправить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Utilities =====
+    const fmt = n => n.toLocaleString('ru-RU');
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const now = () => Date.now();
+    const uuidv4 = () => crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8); return v.toString(16);
+    });
+
+    function saveToFile(filename, content) {
+      const blob = new Blob([content], {type: 'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url), 1000);
+    }
+
+    function readFromFile(cb) {
+      const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json,application/json';
+      inp.onchange = () => {
+        const file = inp.files[0]; if(!file) return;
+        const reader = new FileReader(); reader.onload = () => cb(reader.result); reader.readAsText(file);
+      };
+      inp.click();
+    }
+
+    // ===== Game Data =====
+    const defaultState = () => ({
+      version: 1,
+      id: uuidv4(),
+      coins: 0,
+      energy: 10, maxEnergy: 10, energyRegen: 1, // per second
+      clickBase: 1, clickBonus: 0, // total CPC = (clickBase + clickBonus) * petMult
+      pets: {}, // key -> count
+      businesses: {}, // key -> count
+      upgrades: { cpc1: 0, energyMax: 0, energyRegen: 0 },
+      airdrops: [],
+      joinTs: now(),
+      playtimeSec: 0,
+      lastTick: now(),
+      lastSave: 0,
+      lastActive: now(),
+      achievements: {},
+    });
+
+    const PETS = [
+      { key: 'fluffy', name: 'Флаффи', desc: 'даёт +10% к доходу за клик', price: 50, clickMult: 0.10, cps: 0 },
+      { key: 'espresso', name: 'Эспрессо', desc: '+5% к доходу/сек', price: 150, clickMult: 0, cps: 0.05 },
+      { key: 'spark', name: 'Спарк', desc: '+1 к регену энергии', price: 250, clickMult: 0, cps: 0, energyRegen: 1 },
+      { key: 'jumper', name: 'Джампер', desc: '+2 к максимуму энергии', price: 200, clickMult: 0, cps: 0, maxEnergy: 2 },
+    ];
+
+    const BIZ = [
+      { key:'cafe', name:'Кофейня', base: 100, baseCps: 1 },
+      { key:'bakery', name:'Пекарня', base: 400, baseCps: 5 },
+      { key:'electronics', name:'Магазин электроники', base: 2500, baseCps: 20 },
+      { key:'bk', name:'«Бургер Кинг»', base: 12000, baseCps: 75 },
+      { key:'cinema', name:'Кинотеатр', base: 60000, baseCps: 300 },
+      { key:'mall', name:'Торговый центр', base: 300000, baseCps: 1500 },
+    ];
+
+    const UPGRADES = [
+      { key:'cpc1', name:'Сила клика x2', desc:'Удваивает монеты за клик. Стоимость растёт.', base: 200, effect: lvl => Math.pow(2, lvl+1), type:'mult' },
+      { key:'energyMax', name:'Макс. энергия +5', desc:'Увеличивает максимум энергии на 5.', base: 150, effect: lvl => 5, type:'flatMaxEnergy' },
+      { key:'energyRegen', name:'Реген энергии +1', desc:'Увеличивает реген на 1/сек.', base: 250, effect: lvl => 1, type:'flatRegen' },
+    ];
+
+    // Cost scaling helpers
+    const bizCost = (base, owned) => Math.floor(base * Math.pow(1.15, owned));
+    const upgradeCost = (base, lvl) => Math.floor(base * Math.pow(1.8, lvl));
+    const petCost = (base, owned) => Math.floor(base * Math.pow(1.35, owned));
+
+    // ===== State =====
+    let S = load() || defaultState();
+
+    function load() {
+      try {
+        const raw = localStorage.getItem('kk_save');
+        if(!raw) return null; const obj = JSON.parse(raw);
+        return obj;
+      } catch(e){ console.warn('Load failed', e); return null; }
+    }
+    function save(force=false){
+      const t = now(); if(!force && t - S.lastSave < 5000) return; // throttle
+      S.lastSave = t; localStorage.setItem('kk_save', JSON.stringify(S));
+    }
+
+    // ===== Derived values =====
+    function petMultipliers() {
+      let clickMult = 1, cpsMult = 1, addRegen = 0, addMax = 0;
+      for(const p of PETS){
+        const n = S.pets[p.key] || 0; if(!n) continue;
+        if(p.clickMult) clickMult *= (1 + p.clickMult * n);
+        if(p.cps) cpsMult *= (1 + p.cps * n);
+        if(p.energyRegen) addRegen += p.energyRegen * n;
+        if(p.maxEnergy) addMax += p.maxEnergy * n;
+      }
+      return { clickMult, cpsMult, addRegen, addMax };
+    }
+
+    function totalCps(){
+      const mults = petMultipliers();
+      let cps = 0;
+      for(const b of BIZ){ const n = S.businesses[b.key] || 0; if(!n) continue; cps += b.baseCps * n; }
+      cps *= mults.cpsMult;
+      return cps;
+    }
+
+    function clickValue(){
+      const mults = petMultipliers();
+      const base = (S.clickBase + S.clickBonus);
+      const upgradeMult = Math.pow(2, S.upgrades.cpc1 || 0);
+      return Math.max(1, Math.floor(base * upgradeMult * mults.clickMult));
+    }
+
+    function maxEnergy(){ return S.maxEnergy + (S.upgrades.energyMax||0) * 5 + petMultipliers().addMax; }
+    function regenEnergy(){ return S.energyRegen + (S.upgrades.energyRegen||0) * 1 + petMultipliers().addRegen; }
+
+    // ===== UI Bindings =====
+    const elCoins = document.getElementById('coins');
+    const elEnergyText = document.getElementById('energyText');
+    const elEnergyBar = document.getElementById('energyBar');
+    const elClickGain = document.getElementById('clickGain');
+    const elCps = document.getElementById('cps');
+    const elCpc = document.getElementById('cpc');
+    const elPetsCount = document.getElementById('petsCount');
+    const elBizCount = document.getElementById('bizCount');
+    const elPlayerId = document.getElementById('playerId');
+
+    function renderTop(){
+      elCoins.textContent = fmt(Math.floor(S.coins));
+      const me = maxEnergy();
+      elEnergyText.textContent = `${Math.floor(S.energy)} / ${me}`;
+      elEnergyBar.style.width = `${(S.energy/me)*100}%`;
+      elClickGain.textContent = fmt(clickValue());
+      elCps.textContent = fmt(totalCps().toFixed(1));
+      elCpc.textContent = fmt(clickValue());
+      const petsOwned = Object.values(S.pets).reduce((a,b)=>a+b,0);
+      const bizOwned = Object.values(S.businesses).reduce((a,b)=>a+b,0);
+      elPetsCount.textContent = fmt(petsOwned);
+      elBizCount.textContent = fmt(bizOwned);
+      elPlayerId.textContent = S.id.slice(0,8);
+    }
+
+    // Pets UI
+    const petTabs = document.getElementById('petTabs');
+    const petsList = document.getElementById('petsList');
+    let activePetTab = 'all';
+
+    function renderPetTabs(){
+      petTabs.innerHTML = '';
+      const tabs = [ {k:'all', n:'Все'}, {k:'click', n:'Клик'}, {k:'passive', n:'Пассив'}, {k:'energy', n:'Энергия'} ];
+      for(const t of tabs){
+        const b = document.createElement('button'); b.className = 'tab'+(activePetTab===t.k?' active':''); b.textContent = t.n;
+        b.onclick = ()=>{ activePetTab=t.k; renderPets(); };
+        petTabs.appendChild(b);
+      }
+    }
+
+    function petCategory(p){
+      if(p.energyRegen || p.maxEnergy) return 'energy';
+      if(p.cps) return 'passive';
+      return 'click';
+    }
+
+    function renderPets(){
+      petsList.innerHTML = '';
+      for(const p of PETS){
+        if(activePetTab!=='all' && petCategory(p)!==activePetTab) continue;
+        const owned = S.pets[p.key]||0;
+        const cost = petCost(p.price, owned);
+        const row = document.createElement('div'); row.className='row';
+        const title = document.createElement('div');
+        title.innerHTML = `<div class="title">${p.name} × ${owned}</div><div class="subtitle">${p.desc} • Цена: <b>${fmt(cost)}</b></div>`;
+        const actions = document.createElement('div'); actions.className='actions';
+        const btn = document.createElement('button'); btn.className='buy'; btn.textContent='Купить'; btn.disabled = S.coins < cost;
+        btn.onclick = ()=>{ if(S.coins>=cost){ S.coins-=cost; S.pets[p.key]=(S.pets[p.key]||0)+1; pulseCoin(-cost); save(true); renderAll(); }};
+        actions.appendChild(btn);
+        row.appendChild(title); row.appendChild(actions);
+        petsList.appendChild(row);
+      }
+    }
+
+    // Upgrades UI
+    const upgradesList = document.getElementById('upgradesList');
+    function renderUpgrades(){
+      upgradesList.innerHTML='';
+      for(const u of UPGRADES){
+        const lvl = S.upgrades[u.key]||0;
+        const cost = upgradeCost(u.base, lvl);
+        const row = document.createElement('div'); row.className='row';
+        const title = document.createElement('div');
+        title.innerHTML = `<div class="title">${u.name} (ур. ${lvl})</div><div class="subtitle">${u.desc} • Цена: <b>${fmt(cost)}</b></div>`;
+        const actions = document.createElement('div'); actions.className='actions';
+        const btn = document.createElement('button'); btn.className='buy'; btn.textContent='Улучшить'; btn.disabled = S.coins < cost;
+        btn.onclick = ()=>{ if(S.coins>=cost){ S.coins-=cost; S.upgrades[u.key]=lvl+1; if(u.type==='flatMaxEnergy'){ S.maxEnergy+=u.effect(lvl); } if(u.type==='flatRegen'){ S.energyRegen+=u.effect(lvl);} pulseCoin(-cost); save(true); renderAll(); }};
+        actions.appendChild(btn);
+        row.appendChild(title); row.appendChild(actions);
+        upgradesList.appendChild(row);
+      }
+    }
+
+    // Businesses UI
+    const bizList = document.getElementById('bizList');
+    function renderBiz(){
+      bizList.innerHTML='';
+      for(const b of BIZ){
+        const n = S.businesses[b.key]||0;
+        const cost = bizCost(b.base, n);
+        const row = document.createElement('div'); row.className='row';
+        const title = document.createElement('div');
+        title.innerHTML = `<div class="title">${b.name} × ${n}</div><div class="subtitle">Доход: ${fmt(b.baseCps*n)}/с • Цена: <b>${fmt(cost)}</b></div>`;
+        const actions = document.createElement('div'); actions.className='actions';
+        const btn = document.createElement('button'); btn.className='buy'; btn.textContent='Купить'; btn.disabled = S.coins < cost;
+        btn.onclick = ()=>{ if(S.coins>=cost){ S.coins-=cost; S.businesses[b.key]=n+1; pulseCoin(-cost); save(true); renderAll(); }};
+        actions.appendChild(btn);
+        row.appendChild(title); row.appendChild(actions);
+        bizList.appendChild(row);
+      }
+    }
+
+    // Achievements
+    const ACH = [
+      { key:'firstClick', name:'Первый клик', cond: s=>s._clicks>=1, reward: 10 },
+      { key:'tenPets', name:'Зоопарк', cond: s=>Object.values(s.pets).reduce((a,b)=>a+b,0)>=10, reward: 250 },
+      { key:'rich', name:'Первая тысяча', cond: s=>s.coins>=1000, reward: 100 },
+      { key:'bizman', name:'Малый бизнес', cond: s=>Object.values(s.businesses).reduce((a,b)=>a+b,0)>=5, reward: 150 },
+    ];
+    const elAch = document.getElementById('achievements');
+    function renderAch(){
+      elAch.innerHTML='';
+      for(const a of ACH){
+        const done = !!S.achievements[a.key];
+        const row = document.createElement('div'); row.className='row';
+        row.innerHTML = `<div><div class='title'>${a.name}</div><div class='subtitle'>Награда: ${fmt(a.reward)} монет • ${done? 'Получено ✅' : 'Не получено'}</div></div>`;
+        const actions = document.createElement('div'); actions.className='actions';
+        const btn = document.createElement('button'); btn.className='buy'; btn.textContent = done ? 'Готово' : 'Забрать'; btn.disabled = done || !a.cond(S);
+        btn.onclick = ()=>{ if(!done && a.cond(S)){ S.achievements[a.key]=true; S.coins += a.reward; pulseCoin(+a.reward); save(true); renderAll(); }};
+        actions.appendChild(btn); row.appendChild(actions); elAch.appendChild(row);
+      }
+    }
+
+    // Click logic & FX
+    const clickArea = document.getElementById('clickArea');
+    const clickBtn = document.getElementById('clickBtn');
+    S._clicks = S._clicks || 0;
+
+    function pulseCoin(amount){
+      const f = document.createElement('div'); f.className='floating';
+      f.style.left = (Math.random()*60+20)+'%'; f.style.bottom='60px';
+      f.style.color = amount>=0? 'var(--coin)':'#ff8a8a';
+      f.textContent = (amount>=0? '+':'') + fmt(Math.floor(amount));
+      clickArea.appendChild(f); setTimeout(()=>f.remove(), 1200);
+    }
+
+    function doClick(){
+      const gain = clickValue();
+      if(S.energy < 1) { shake(clickBtn); return; }
+      S.energy = clamp(S.energy - 1, 0, maxEnergy());
+      S.coins += gain; S._clicks++;
+      pulseCoin(gain);
+      renderTop();
+      save();
+    }
+
+    function shake(el){ el.style.transform = 'translateX(1px)'; setTimeout(()=>el.style.transform='', 120); }
+
+    clickBtn.addEventListener('click', doClick);
+
+    // Passive loop (1/sec)
+    setInterval(()=>{
+      // cps
+      const cps = totalCps();
+      if(cps>0){ S.coins += cps; }
+      // energy regen
+      S.energy = clamp(S.energy + regenEnergy(), 0, maxEnergy());
+      // playtime
+      S.playtimeSec += 1;
+      renderTop();
+      save();
+    }, 1000);
+
+    // Autosave
+    setInterval(()=> save(true), 15000);
+
+    // Offline progress on load
+    (function handleOffline(){
+      const dtSec = Math.min(60*60*8, Math.max(0, Math.floor((now()-S.lastActive)/1000))); // cap 8h
+      if(dtSec>0){
+        const earn = totalCps()*dtSec;
+        S.coins += earn;
+        document.getElementById('offlineInfo').textContent = `Вы были оффлайн ${Math.floor(dtSec/60)} мин — начислено ${fmt(Math.floor(earn))} монет.`;
+      } else {
+        document.getElementById('offlineInfo').textContent = '—';
+      }
+      S.lastActive = now();
+    })();
+
+    // Airdrop modal logic (local simulation)
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const airOpen = document.getElementById('airdropOpen');
+    const airExport = document.getElementById('exportAirdrops');
+    const airId = document.getElementById('air_id');
+    const airReason = document.getElementById('air_reason');
+    const airAmount = document.getElementById('air_amount');
+    const airCancel = document.getElementById('air_cancel');
+    const airSubmit = document.getElementById('air_submit');
+    const airdropCount = document.getElementById('airdropCount');
+
+    function updateAirdropCount(){ airdropCount.textContent = `Заявок: ${S.airdrops.length}`; }
+    function openModal(){ modalBackdrop.style.display='flex'; airId.value = S.id; airReason.value=''; airAmount.value=''; }
+    function closeModal(){ modalBackdrop.style.display='none'; }
+
+    airOpen.onclick = openModal; airCancel.onclick = closeModal;
+    airSubmit.onclick = ()=>{
+      const amount = Math.max(1, parseInt(airAmount.value||'0',10));
+      const reason = (airReason.value||'').trim();
+      if(!reason){ alert('Пожалуйста, укажите причину.'); return; }
+      S.airdrops.push({ id:S.id, reason, amount, ts: now(), status:'pending' });
+      updateAirdropCount(); save(true); closeModal();
+      // small chance of instant approval (fun)
+      if(Math.random()<0.05){
+        S.coins += amount; pulseCoin(amount); S.airdrops[S.airdrops.length-1].status='approved'; renderAll(); save(true);
+        alert('Сюрприз! Ваш airdrop мгновенно одобрен 🎉');
+      } else {
+        alert('Заявка отправлена! (Сохранена локально)');
+      }
+    };
+
+    airExport.onclick = ()=>{
+      saveToFile(`airdrop_requests_${S.id.slice(0,8)}.json`, JSON.stringify(S.airdrops, null, 2));
+    };
+
+    // Profile actions
+    document.getElementById('profileId').textContent = S.id;
+    document.getElementById('joinDate').textContent = new Date(S.joinTs).toLocaleString('ru-RU');
+    document.getElementById('copyId').onclick = async ()=>{
+      try { await navigator.clipboard.writeText(S.id); alert('ID скопирован!'); } catch(e){ alert('Не удалось скопировать.'); }
+    };
+
+    function renderPlaytime(){
+      const m = Math.floor(S.playtimeSec/60), h=Math.floor(m/60), mm=m%60;
+      document.getElementById('playtime').textContent = h>0? `${h} ч ${mm} мин` : `${mm} мин`;
+    }
+    setInterval(renderPlaytime, 1000); renderPlaytime();
+
+    // Save export/import/wipe
+    document.getElementById('exportSave').onclick = ()=> saveToFile(`kotokombat_save_${S.id.slice(0,8)}.json`, JSON.stringify(S));
+    document.getElementById('importSave').onclick = ()=> readFromFile(txt=>{ try { const obj=JSON.parse(txt); if(obj && obj.id){ S=obj; save(true); renderAll(); alert('Сохранение импортировано!'); } else alert('Файл не похож на сохранение.'); } catch(e){ alert('Ошибка импорта: '+e.message); } });
+    document.getElementById('wipe').onclick = ()=>{ if(confirm('Точно сбросить прогресс?')){ localStorage.removeItem('kk_save'); S = defaultState(); renderAll(); save(true); } };
+
+    // Initial renders
+    function renderAll(){ renderTop(); renderPetTabs(); renderPets(); renderUpgrades(); renderBiz(); renderAch(); updateAirdropCount(); document.getElementById('profileId').textContent=S.id; document.getElementById('playerId').textContent=S.id.slice(0,8); document.getElementById('joinDate').textContent=new Date(S.joinTs).toLocaleString('ru-RU'); }
+    renderAll();
+
+    // Before unload update lastActive
+    window.addEventListener('beforeunload', ()=>{ S.lastActive = now(); save(true); });
+
+    // Perf: disable heavy paints on blur
+    document.addEventListener('visibilitychange', ()=>{ if(document.hidden) save(true); });
+  </script>
+</body>
+</html>
